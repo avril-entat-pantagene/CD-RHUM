@@ -8,7 +8,7 @@
 }
 
 body {
-  filter: url(/assets/bleeding.svg#svgfm-filter);
+  filter: url(/bleeding.svg#svgfm-filter);
 }
 
 .title {
