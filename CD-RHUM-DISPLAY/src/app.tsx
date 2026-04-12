@@ -8,13 +8,13 @@ export function App() {
         <BouncingCdRhumLogo />
       </section>
 
-      <section id="logs" class="border">
+      {/* <section id="logs" class="border">
         <div>
           logs
         </div>
-      </section>
+      </section> */}
 
-      <section id="prices" class="border h-80">
+      <section id="prices" class="h-80">
         <PricesList />
 
       </section>
