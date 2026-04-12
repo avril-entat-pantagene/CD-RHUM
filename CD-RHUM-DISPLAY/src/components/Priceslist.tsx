@@ -1,6 +1,7 @@
 
 import { parse as parseYaml } from "yaml";
 import pricesYaml from "../assets/prices.yml?raw";
+import { BouncingCategoryTitle } from "./BouncingCategoryTitle";
 
 type PriceItem = {
     name: string;
@@ -139,17 +140,24 @@ export function PricesList() {
             return null;
         }
 
+        const categoryHeightWeight = Math.max(1, categoryData.items.length + 1);
+
         const categoryTitle = categoryData.unitPrice
             ? `${categoryData.unitPrice}€ - ${categoryData.title.toUpperCase()}`
             : categoryData.title.toUpperCase();
+
+        const categoryStyle = {
+            flexGrow: categoryHeightWeight,
+            borderColor: categoryData.borderColor,
+        };
 
         return (
             <section
                 key={category}
                 class={`price-category-box ${categoryData.borderClass}`}
-                style={categoryData.borderColor ? { borderColor: categoryData.borderColor } : undefined}
+                style={categoryStyle}
             >
-                <h3 class="price-category-title">{categoryTitle}</h3>
+                <BouncingCategoryTitle text={categoryTitle} />
                 <ul class="price-items-list">
                     {categoryData.items.map((item) => (
                         <li key={`${category}-${item.name}`} class="price-item-row">

@@ -7,6 +7,10 @@
   background: #1F2A34;
 }
 
+body {
+  filter: url(/assets/bleeding.svg#svgfm-filter);
+}
+
 .title {
   font-size: 2rem;
   font-weight: bold;
@@ -67,7 +71,7 @@
   border-width: 2px;
   border-style: solid;
   border-radius: 0.5rem;
-  padding: 1.5rem 0.75rem 0.75rem;
+  padding: 0.75rem;
 }
 
 .price-category-box--energy {
@@ -86,17 +90,34 @@
   border-color: #a78bfa;
 }
 
+.price-category-title-stage {
+  position: absolute;
+  inset: 0.35rem;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .price-category-title {
   position: absolute;
-  top: 0.2rem;
-  right: 0.5rem;
+  left: 0;
+  top: 0;
   margin: 0;
   font-size: 0.8rem;
+  line-height: 1;
   text-transform: uppercase;
   font-weight: 700;
+  white-space: nowrap;
+  background: transparent;
+  will-change: transform, color;
+  user-select: none;
+  text-shadow: 0 0 8px color-mix(in srgb, currentColor 80%, white 20%);
 }
 
 .price-items-list {
+  position: relative;
+  z-index: 1;
   margin: 0;
   padding-left: 0;
   list-style: none;
@@ -105,6 +126,14 @@
 .price-item-row {
   display: flex;
   align-items: baseline;
+}
+
+.price-item-row + .price-item-row {
+  margin-top: 0.2rem;
+}
+
+.price-item-row span {
+  line-height: 1;
 }
 
 .price-item-value {
