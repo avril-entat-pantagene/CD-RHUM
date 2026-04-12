@@ -1,0 +1,180 @@
+
+import { parse as parseYaml } from "yaml";
+import pricesYaml from "../assets/prices.yml?raw";
+
+type PriceItem = {
+    name: string;
+};
+
+type PriceCategory = {
+    title?: string;
+    unitPrice?: number | string;
+    color?: string;
+    borderClass?: string;
+    borderColor?: string;
+    items?: Array<string | { name?: string }>;
+};
+
+type LayoutColumn = {
+    id?: string;
+    categories?: string[];
+};
+
+type PricesConfig = {
+    layout?: {
+        columns?: LayoutColumn[];
+    };
+    categories?: Record<string, PriceCategory>;
+};
+
+type NormalizedCategory = {
+    key: string;
+    title: string;
+    unitPrice: string;
+    borderClass: string;
+    borderColor?: string;
+    items: PriceItem[];
+};
+
+function formatPrice(value?: number | string): string {
+    if (value === undefined || value === null || value === "") {
+        return "";
+    }
+
+    if (typeof value === "number") {
+        return value.toFixed(2);
+    }
+
+    const numericValue = Number.parseFloat(value);
+    if (Number.isNaN(numericValue)) {
+        return value;
+    }
+
+    return numericValue.toFixed(2);
+}
+
+function parseConfig(yamlContent: string): PricesConfig {
+    try {
+        const parsed = parseYaml(yamlContent);
+        if (parsed && typeof parsed === "object") {
+            return parsed as PricesConfig;
+        }
+    } catch {
+        return {};
+    }
+
+    return {};
+}
+
+function normalizeItems(items: PriceCategory["items"]): PriceItem[] {
+    if (!items || !Array.isArray(items)) {
+        return [];
+    }
+
+    return items
+        .map((item) => {
+            if (typeof item === "string") {
+                return { name: item.trim() };
+            }
+
+            return { name: item?.name?.trim() ?? "" };
+        })
+        .filter((item) => item.name.length > 0);
+}
+
+const pricesConfig = parseConfig(pricesYaml);
+
+const categoryBorderClass: Record<string, string> = {
+    energy: "price-category-box--energy",
+    soda: "price-category-box--soda",
+    snacks: "price-category-box--snacks",
+    other: "price-category-box--other",
+};
+
+const normalizedCategories = Object.entries(pricesConfig.categories ?? {}).reduce<
+    Record<string, NormalizedCategory>
+>((accumulator, [key, category]) => {
+    const items = normalizeItems(category.items);
+    if (items.length === 0) {
+        return accumulator;
+    }
+
+    accumulator[key] = {
+        key,
+        title: category.title?.trim() || key,
+        unitPrice: formatPrice(category.unitPrice),
+        borderClass: category.borderClass || categoryBorderClass[key] || categoryBorderClass.other,
+        borderColor: category.color || category.borderColor,
+        items,
+    };
+    return accumulator;
+}, {});
+
+const configuredColumns = (pricesConfig.layout?.columns ?? []).map((column, index) => ({
+    id: column.id || `column-${index}`,
+    categories: (column.categories ?? []).filter((category) => normalizedCategories[category]),
+}));
+
+const usedCategories = new Set(configuredColumns.flatMap((column) => column.categories));
+
+const remainingCategories = Object.keys(normalizedCategories).filter((key) => !usedCategories.has(key));
+
+const columns = configuredColumns.length > 0
+    ? configuredColumns.map((column, index) => {
+        if (index !== configuredColumns.length - 1 || remainingCategories.length === 0) {
+            return column;
+        }
+
+        return {
+            ...column,
+            categories: [...column.categories, ...remainingCategories],
+        };
+    })
+    : [{ id: "column-0", categories: remainingCategories }];
+
+export function PricesList() {
+    const renderCategoryBox = (category: string) => {
+        const categoryData = normalizedCategories[category];
+        if (!categoryData || categoryData.items.length === 0) {
+            return null;
+        }
+
+        const categoryTitle = categoryData.unitPrice
+            ? `${categoryData.unitPrice}€ - ${categoryData.title.toUpperCase()}`
+            : categoryData.title.toUpperCase();
+
+        return (
+            <section
+                key={category}
+                class={`price-category-box ${categoryData.borderClass}`}
+                style={categoryData.borderColor ? { borderColor: categoryData.borderColor } : undefined}
+            >
+                <h3 class="price-category-title">{categoryTitle}</h3>
+                <ul class="price-items-list">
+                    {categoryData.items.map((item) => (
+                        <li key={`${category}-${item.name}`} class="price-item-row">
+                            <span>
+                                {item.name}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        );
+    };
+
+    return (
+        <div class="prices-list-root">
+            <div class="prices-columns-layout">
+                {columns.map((column, index) => (
+                    <div
+                        key={column.id}
+                        class={index === 0 ? "prices-main-column" : "prices-side-column"}
+                    >
+                        {column.categories.map((category) => renderCategoryBox(category))}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

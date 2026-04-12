@@ -1,0 +1,51 @@
+layout:
+  columns:
+    - id: main
+      categories:
+        - soda
+        - energy
+    - id: side
+      categories:
+        - snacks
+        - mate
+
+categories:
+  energy:
+    title: Energy
+    unitPrice: 1.5
+    color: "#facc15"
+    borderClass: price-category-box--energy
+    items:
+      - Monster white
+      - Red Bull
+
+  soda:
+    title: Soda
+    unitPrice: 0.9
+    color: "#38bdf8"
+    borderClass: price-category-box--soda
+    items:
+      - Coca
+      - Oasis
+      - Ice tea
+      - Canada dry
+      - Schweppes agrumes
+      - Pulco citron
+
+  snacks:
+    title: Snacks
+    unitPrice: 0.9
+    color: "#f97316"
+    borderClass: price-category-box--snacks
+    items:
+      - Snickers
+      - Doritos
+      - Twix
+
+  mate:
+    title: mate
+    unitPrice: 2.1
+    color: "#22c55e"
+    borderClass: price-category-box--mate
+    items:
+      - El Tonny Mate

@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+* {
+  font-size: 1rem;
+  color: #FFFF;
+
+  background: #1F2A34;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.cd-rhum-logo-stage {
+  position: relative;
+  width: 100%;
+  min-height: 110px;
+  overflow: hidden;
+}
+
+.cd-rhum-logo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: clamp(1.3rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-shadow: 0 0 10px color-mix(in srgb, currentColor 80%, white 20%);
+  will-change: transform, color;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.prices-list-root {
+  padding: 0.75rem;
+}
+
+.prices-list-title {
+  margin-bottom: 0.75rem;
+  text-align: center;
+  text-decoration: underline;
+}
+
+.prices-columns-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.75rem;
+}
+
+.prices-main-column,
+.prices-side-column {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+@media (max-width: 900px) {
+  .prices-columns-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.price-category-box {
+  position: relative;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 0.5rem;
+  padding: 1.5rem 0.75rem 0.75rem;
+}
+
+.price-category-box--energy {
+  border-color: #facc15;
+}
+
+.price-category-box--soda {
+  border-color: #38bdf8;
+}
+
+.price-category-box--snacks {
+  border-color: #f97316;
+}
+
+.price-category-box--other {
+  border-color: #a78bfa;
+}
+
+.price-category-title {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.5rem;
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.price-items-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.price-item-row {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-item-value {
+  min-width: 4ch;
+  text-align: right;
+}
