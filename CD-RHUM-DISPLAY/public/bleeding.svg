@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0">
     <defs>
         <filter id="svgfm-filter">
-            <feColorMatrix type="matrix" values="1    0    0    0    0
-                                                 0    1    0    0    0
-                                                 0    0    1    0    0
-                                                 0.33 0.33 0.33 0    0" result="feColorMatrix-7369419e"></feColorMatrix>
+            <feColorMatrix type="matrix" values="1   0   0   0   0
+                                                 0   1   0   0   0
+                                                 0   0   1   0   0
+                                                 0.3 0.3 0.3 0   0" result="feColorMatrix-7369419e"></feColorMatrix>
             <feColorMatrix type="matrix" values="1   0   0   0   0
                                                  0   1   0   0   0
                                                  0   0   1   0   0
                                                  0.2 0.2 0.2 0   0" result="feColorMatrix-d29ce70f"></feColorMatrix>
-            <feGaussianBlur in="feColorMatrix-d29ce70f" stdDeviation="9" edgeMode="none" result="feGaussianBlur-2f80c2e0"></feGaussianBlur>
+            <feGaussianBlur in="feColorMatrix-d29ce70f" stdDeviation="16" edgeMode="none" result="feGaussianBlur-2f80c2e0"></feGaussianBlur>
             <feGaussianBlur in="feColorMatrix-7369419e" stdDeviation="2" edgeMode="none" result="feGaussianBlur-37cbde96"></feGaussianBlur>
             <feBlend in="feGaussianBlur-37cbde96" in2="feGaussianBlur-2f80c2e0" mode="normal" result="feBlend-a56711a9"></feBlend>
             <feBlend in="SourceGraphic" in2="feBlend-a56711a9" mode="screen"></feBlend>
