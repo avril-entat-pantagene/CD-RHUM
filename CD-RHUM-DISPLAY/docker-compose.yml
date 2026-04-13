@@ -1,0 +1,9 @@
+services:
+  web:
+    container_name: cd-rhum-display
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8066:3000"
+    restart: unless-stopped
