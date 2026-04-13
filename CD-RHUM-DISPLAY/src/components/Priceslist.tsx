@@ -1,10 +1,14 @@
 
 import { parse as parseYaml } from "yaml";
+import { useMemo, useState } from "preact/hooks";
 import pricesYaml from "../assets/prices.yml?raw";
 import { BouncingCategoryTitle } from "./BouncingCategoryTitle";
+import { HelloAssoYamlScraper } from "./HelloAssoYamlScraper";
 
 type PriceItem = {
     name: string;
+    available?: number;
+    price?: number;
 };
 
 type PriceCategory = {
@@ -13,7 +17,7 @@ type PriceCategory = {
     color?: string;
     borderClass?: string;
     borderColor?: string;
-    items?: Array<string | { name?: string }>;
+    items?: Array<string | { name?: string; available?: number; price?: number }>;
 };
 
 type LayoutColumn = {
@@ -78,12 +82,14 @@ function normalizeItems(items: PriceCategory["items"]): PriceItem[] {
                 return { name: item.trim() };
             }
 
-            return { name: item?.name?.trim() ?? "" };
+            return {
+                name: item?.name?.trim() ?? "",
+                available: item?.available,
+                price: item?.price,
+            };
         })
         .filter((item) => item.name.length > 0);
 }
-
-const pricesConfig = parseConfig(pricesYaml);
 
 const categoryBorderClass: Record<string, string> = {
     energy: "price-category-box--energy",
@@ -92,48 +98,58 @@ const categoryBorderClass: Record<string, string> = {
     other: "price-category-box--other",
 };
 
-const normalizedCategories = Object.entries(pricesConfig.categories ?? {}).reduce<
-    Record<string, NormalizedCategory>
->((accumulator, [key, category]) => {
-    const items = normalizeItems(category.items);
-    if (items.length === 0) {
-        return accumulator;
-    }
+export function PricesList() {
+    const [enrichedYaml, setEnrichedYaml] = useState<string>(pricesYaml);
 
-    accumulator[key] = {
-        key,
-        title: category.title?.trim() || key,
-        unitPrice: formatPrice(category.unitPrice),
-        borderClass: category.borderClass || categoryBorderClass[key] || categoryBorderClass.other,
-        borderColor: category.color || category.borderColor,
-        items,
-    };
-    return accumulator;
-}, {});
+    const pricesConfig = useMemo(() => parseConfig(enrichedYaml), [enrichedYaml]);
 
-const configuredColumns = (pricesConfig.layout?.columns ?? []).map((column, index) => ({
-    id: column.id || `column-${index}`,
-    categories: (column.categories ?? []).filter((category) => normalizedCategories[category]),
-}));
-
-const usedCategories = new Set(configuredColumns.flatMap((column) => column.categories));
-
-const remainingCategories = Object.keys(normalizedCategories).filter((key) => !usedCategories.has(key));
-
-const columns = configuredColumns.length > 0
-    ? configuredColumns.map((column, index) => {
-        if (index !== configuredColumns.length - 1 || remainingCategories.length === 0) {
-            return column;
+    const normalizedCategories = useMemo(() => Object.entries(pricesConfig.categories ?? {}).reduce<
+        Record<string, NormalizedCategory>
+    >((accumulator, [key, category]) => {
+        const items = normalizeItems(category.items);
+        if (items.length === 0) {
+            return accumulator;
         }
 
-        return {
-            ...column,
-            categories: [...column.categories, ...remainingCategories],
+        accumulator[key] = {
+            key,
+            title: category.title?.trim() || key,
+            unitPrice: formatPrice(category.unitPrice),
+            borderClass: category.borderClass || categoryBorderClass[key] || categoryBorderClass.other,
+            borderColor: category.color || category.borderColor,
+            items,
         };
-    })
-    : [{ id: "column-0", categories: remainingCategories }];
+        return accumulator;
+    }, {}), [pricesConfig.categories]);
 
-export function PricesList() {
+    const configuredColumns = useMemo(() => (pricesConfig.layout?.columns ?? []).map((column, index) => ({
+        id: column.id || `column-${index}`,
+        categories: (column.categories ?? []).filter((category) => normalizedCategories[category]),
+    })), [pricesConfig.layout?.columns, normalizedCategories]);
+
+    const usedCategories = useMemo(
+        () => new Set(configuredColumns.flatMap((column) => column.categories)),
+        [configuredColumns],
+    );
+
+    const remainingCategories = useMemo(
+        () => Object.keys(normalizedCategories).filter((key) => !usedCategories.has(key)),
+        [normalizedCategories, usedCategories],
+    );
+
+    const columns = useMemo(() => (configuredColumns.length > 0
+        ? configuredColumns.map((column, index) => {
+            if (index !== configuredColumns.length - 1 || remainingCategories.length === 0) {
+                return column;
+            }
+
+            return {
+                ...column,
+                categories: [...column.categories, ...remainingCategories],
+            };
+        })
+        : [{ id: "column-0", categories: remainingCategories }]), [configuredColumns, remainingCategories]);
+
     const renderCategoryBox = (category: string) => {
         const categoryData = normalizedCategories[category];
         if (!categoryData || categoryData.items.length === 0) {
@@ -159,13 +175,19 @@ export function PricesList() {
             >
                 <BouncingCategoryTitle text={categoryTitle} />
                 <ul class="price-items-list">
-                    {categoryData.items.map((item) => (
-                        <li key={`${category}-${item.name}`} class="price-item-row">
-                            <span>
-                                {item.name}
-                            </span>
-                        </li>
-                    ))}
+                    {categoryData.items.map((item) => {
+                        const displayName = typeof item.available === "number"
+                            ? `${item.name} (${item.available})`
+                            : `${item.name} (?)`;
+
+                        return (
+                            <li key={`${category}-${item.name}`} class="price-item-row">
+                                <span>
+                                    {displayName}
+                                </span>
+                            </li>
+                        );
+                    })}
                 </ul>
             </section>
         );
@@ -173,6 +195,10 @@ export function PricesList() {
 
     return (
         <div class="prices-list-root">
+            <HelloAssoYamlScraper
+                inputYaml={pricesYaml}
+                onOutputYaml={setEnrichedYaml}
+            />
             <div class="prices-columns-layout">
                 {columns.map((column, index) => (
                     <div
