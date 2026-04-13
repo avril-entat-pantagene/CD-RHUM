@@ -30,6 +30,7 @@ type HelloAssoYamlScraperProps = {
 
 const DEFAULT_SOURCE_URL = "https://www.helloasso.com/associations/cd-rom-telecom/boutiques/cdromtcom";
 const DEFAULT_REFRESH_INTERVAL_MS = 30_000;
+const DEFAULT_SCRAPE_ENDPOINT = "/api/helloasso-scrape";
 
 function normalizeProductName(productName: string): string {
     return productName
@@ -104,6 +105,83 @@ function parseTextStocks(content: string): Record<string, ProductScrapeData> {
     return stocks;
 }
 
+function extractRemainingCount(quantityText: string): number | null {
+    const quantityMatch = quantityText.match(/(\d+)\s+produit/i);
+    if (!quantityMatch) {
+        return null;
+    }
+
+    const available = Number.parseInt(quantityMatch[1], 10);
+    if (Number.isNaN(available)) {
+        return null;
+    }
+
+    return available;
+}
+
+function parseHtmlStocks(content: string): Record<string, ProductScrapeData> {
+    if (typeof DOMParser === "undefined") {
+        return {};
+    }
+
+    const parser = new DOMParser();
+    const document = parser.parseFromString(content, "text/html");
+    const rows = Array.from(document.querySelectorAll(".CampaignTier"));
+
+    return rows.reduce<Record<string, ProductScrapeData>>((accumulator, row) => {
+        const name = row.querySelector(".tier-item-description__title")?.textContent?.trim() ?? "";
+        const quantityText = row.querySelector(".tier-item-description-quantity__item")?.textContent?.trim() ?? "";
+        const priceText = row.querySelector(".tier-item-price-fixed")?.textContent?.trim() ?? "";
+
+        if (!name || !quantityText) {
+            return accumulator;
+        }
+
+        const available = extractRemainingCount(quantityText);
+        if (available === null) {
+            return accumulator;
+        }
+
+        const priceMatch = priceText.match(/(\d+[\.,]\d{2})\s*€/);
+
+        accumulator[normalizeProductName(name)] = {
+            available,
+            price: parsePriceValue(priceMatch?.[1]),
+        };
+
+        return accumulator;
+    }, {});
+}
+
+function parseInputAttributeStocks(content: string): Record<string, ProductScrapeData> {
+    const stocks: Record<string, ProductScrapeData> = {};
+
+    const patterns = [
+        /aria-label="([^"]+)\s-\sQuantité"[^>]*\bmax="(\d+)"/gi,
+        /\bmax="(\d+)"[^>]*aria-label="([^"]+)\s-\sQuantité"/gi,
+    ];
+
+    for (const pattern of patterns) {
+        let matched = pattern.exec(content);
+        while (matched) {
+            const isMaxFirst = pattern.source.startsWith("\\bmax");
+            const productName = (isMaxFirst ? matched[2] : matched[1])?.trim() ?? "";
+            const maxValue = isMaxFirst ? matched[1] : matched[2];
+            const available = Number.parseInt(maxValue, 10);
+
+            if (productName && !Number.isNaN(available)) {
+                stocks[normalizeProductName(productName)] = {
+                    available,
+                };
+            }
+
+            matched = pattern.exec(content);
+        }
+    }
+
+    return stocks;
+}
+
 function enrichYamlItems(inputYaml: string, stockByName: Record<string, ProductScrapeData>): string {
     const config = parseInputYaml(inputYaml);
 
@@ -143,7 +221,7 @@ function enrichYamlItems(inputYaml: string, stockByName: Record<string, ProductS
 }
 
 async function scrapeAndEnrichYaml(inputYaml: string, sourceUrl: string): Promise<string> {
-    const scrapeUrl = `https://r.jina.ai/http://${sourceUrl}`;
+    const scrapeUrl = `${DEFAULT_SCRAPE_ENDPOINT}?source=${encodeURIComponent(sourceUrl)}`;
 
     const response = await fetch(scrapeUrl);
     if (!response.ok) {
@@ -151,7 +229,11 @@ async function scrapeAndEnrichYaml(inputYaml: string, sourceUrl: string): Promis
     }
 
     const rawContent = await response.text();
-    const stockByName = parseTextStocks(rawContent);
+    const stockByName = {
+        ...parseTextStocks(rawContent),
+        ...parseInputAttributeStocks(rawContent),
+        ...parseHtmlStocks(rawContent),
+    };
 
     if (Object.keys(stockByName).length === 0) {
         return inputYaml;
