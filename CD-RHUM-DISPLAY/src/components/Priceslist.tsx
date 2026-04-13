@@ -159,7 +159,7 @@ export function PricesList() {
         const categoryHeightWeight = Math.max(1, categoryData.items.length + 1);
 
         const categoryTitle = categoryData.unitPrice
-            ? `${categoryData.unitPrice}€ - ${categoryData.title.toUpperCase()}`
+            ? `${categoryData.unitPrice}€`
             : categoryData.title.toUpperCase();
 
         const categoryStyle = {
